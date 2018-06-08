@@ -6,11 +6,14 @@
     <script src="sprite.js"></script>
     <script src="asteroid.js" charset="utf-8"></script>
     <script src="cannon.js"></script>
+    <script src="house.js"></script>
     <script src="ImageLibrary.js" charset="utf-8"></script>
     <script src="AudioLibrary.js" charset="utf-8"></script>
+    <script src="Mouse.js" charset="utf-8"></script>
   </head>
   <body>
     <h1>Missile Command</h1>
+
     <canvas width="480" height="352"> //480,320
       Seu browser não suporta canvas!</canvas>
     <script>
@@ -36,9 +39,37 @@
     imageLibrary.load("asteroide", "Imagens/Asteroides.png");
 
     var audioLibrary = new AudioLibrary();
+
+    var mouse = new Mouse();
+    onmousemove = function(e){
+      //console.log("mouse location:", e.clientX, e.clientY);
+      mouse.cx = e.clientX;
+      mouse.cy = e.clientY;
+      mouse.sx = e.screenX;
+      mouse.sy = e.screenY;
+    };    ///Captura a posição do mouse a todo instante
+
     var dt = anterior = 0;
     var G = 200;
     var asteroides = [];
+    var casas = [];
+    var house1 = new House();
+    house1.sprite.x = 40;
+    var house2 = new House();
+    house2.tipo = 1;
+    house2.sprite.x = 160;
+    var house3 = new House();
+    house3.sprite.x = 280;
+    var house4 = new House();
+    house4.sprite.x = 318;
+    var house5 = new House();
+    house5.sprite.x = 370;
+    house5.tipo = 1;
+    casas.push(house1);
+    casas.push(house2);
+    casas.push(house3);
+    casas.push(house4);
+    casas.push(house5);
 
     //for(var i = 0; i > 3; i){
     /*var asteroide = new Asteroid();
@@ -53,6 +84,7 @@
     var tempoGameOver = 2;
     var estado = 0;
     var melhorPontuacao = 0;
+    var contCasasDestruidas = 0;
 
     //Estabelece ordem e tempo para os inimigos descerem
     var tempoAumentarVelocidade = 15;
@@ -103,12 +135,10 @@
             for(var i = 0; i < 15;i++){
               imageLibrary.drawClipSize(ctx, "ground_1", 0, 0, 120, 128, 0+32*i, 0+32*10, 32, 32);
             }
-            imageLibrary.drawClipSize(ctx, "house01", 0, 0, 1259, 837, 40, 32*9, 32, 32);
-            imageLibrary.drawClipSize(ctx, "house02", 0, 0, 1259, 837, 160, 32*9, 32, 32);
-            imageLibrary.drawClipSize(ctx, "house01", 0, 0, 1259, 837, 280, 32*9, 32, 32);
-            imageLibrary.drawClipSize(ctx, "house01", 0, 0, 1259, 837, 318, 32*9, 32, 32);
-            imageLibrary.drawClipSize(ctx, "house02", 0, 0, 1259, 837, 370, 32*9, 32, 32);
             imageLibrary.drawClipSize(ctx, "gunTurret", 0, 0, 68, 134, tela.width/2-15, 32*9+8, 32, 24);
+            for(var i = 0; i < 5; i++){
+              casas[i].desenhar(ctx);
+            }
             if(tempoEspera > 0){
               tempoEspera = tempoEspera - 0.7*dt
             }
@@ -120,8 +150,9 @@
             }
 
             for (var i = 0; i < asteroides.length; i++) { //Move e coloca os inimigos na parte de cima da tela
-              if(asteroides[i].sprite.y > tela.height){
-                asteroides[i].sprite.y = -asteroides[i].sprite.h;
+              if(asteroides[i].sprite.y > tela.height - 32){
+                //asteroides[i].sprite.y = -asteroides[i].sprite.h;
+                asteroides.splice(i,1);
               }
               else{
         				asteroides[i].sprite.ang += 10;
@@ -137,12 +168,13 @@
             }
 
             for(var i = 0; i < player.tiros.length; i++){  //Teste da colisão dos tiros com os asteroides
-              if(tiros[i].y >= 0){
                 var atingiu = false;
                 for(var j = 0; j < asteroides.length; j++){
-                  if(player.tiros[i].colidiuCom(asteroides[j])){
-                    inimigos.splice(j,1);
+                  if(player.tiros[i].colidiuCom(asteroides[j].sprite)){
+                    asteroides.splice(j,1);
                     player.pontos += 50;
+                    player.tiros.splice(i,1);
+                    break;
                     atingiu = true;
                   }
                 }
@@ -150,31 +182,45 @@
                   atingiu = null;
                   player.tiros.splice(i,1);
                 }
+            }
+
+            for(var i = 0; i < asteroides.length; i++){  //Teste da colisão dos tiros com os asteroides
+              for(var j = 0; j < casas.length; j++){
+                if(asteroides[i].colidiuCom(casas[j])){
+                  if(casas[j].estado != 1){
+                    asteroides.splice(i, 1);
+                    casas[j].estado = 1;
+                    player.vidas--;
+                    break;
+                  }
+                }
               }
-              else
-                player.tiros.splice(i,1);
             }
 
             for (var i = 0; i < player.tiros.length; i++) {
-              if(player.tiros[i].y >= 0){
-                tiros[i].desenhar(ctx);
-              }
-              else{                     //Tiros que estão fora do canvas são removidos pois não terão mais funcionalidade
-                player.tiros.splice(i,1);
-              }
+              tiros[i].desenhar(ctx);
             }
 
             for (var i = 0; i < asteroides.length; i++) {
               asteroides[i].desenhar(ctx);
             }
 
+            if(mouse.cx > 0 && mouse.cx < tela.width && mouse.cy > 0 && mouse.cy < tela.height){
+              console.log("Ta no canvas");
+              ctx.beginPath();
+              //ctx.arc(mouse.sx-10,mouse.sy-163,20,0,2*Math.PI);
+              ctx.arc(mouse.cx,mouse.cy,20,0,2*Math.PI);
+              ctx.stroke();
+
+            }
+
             if(tempoAumentarVelocidade <= 0){
               inimigosVel += 20;
               controlaVelocidadeInimigos(inimigosVel);
               tempoAumentarVelocidade = 15;
-          }
-            if(player.vidas == 0){
-              estado = 1;
+            }
+            if(player.vidas <= 0){
+              estado = 2;
             }
             //imageLibrary.drawClipSize(ctx, "spriteSheet", 0, 0, 144, 223, 0, 0, tela.width, tela.height-56);      //Background
             ctx.strokeText("Pontos: ", tela.width - 120,20);
@@ -230,33 +276,13 @@
             else{
                 if(player.pontos > melhorPontuacao)
                   melhorPontuacao = player.pontos;
-                asteroides.splice(0,inimigos.length);
-                player.pontos = null;   //Limpa o objeto
-                tempoGameOver = 2;
-                estado = 3;
-            }
-
-
-
-            //imageLibrary.drawClipSize(ctx, "spriteSheet", 148, 261, 38, 37, tela.width/2-80, 115, 181, 118);      //moeda
-
-
-            /*if(tempoGameOver >= 0){
-                tempoGameOver = tempoGameOver - 0.7*dt;
-            }
-            else{
-                if(player.pontos > melhorPontuacao){
-                  melhorPontuacao = player.pontos;
-                }
                 limparDados();
                 estado = 1;
-            }*/
+            }
 
             break;
           case 3:
             limparTela();
-            //imageLibrary.drawClipSize(ctx, "spriteSheet", 0, 0, 144, 223, 0, 0, tela.width, tela.height-56);      //Background
-            //imageLibrary.drawClipSize(ctx, "spriteSheet", 292, 0, 168, 56, 0, tela.height-56, tela.width, 56);    //chão
             break;
           default:
 
@@ -274,9 +300,11 @@
     }
 
     function limparDados(){
-      //barreira.splice(0, barreira.length);
+      asteroides.splice(0,asteroides.length);
+      player.pontos = null;   //Limpa o objeto
       velFase = 200;
       player = null;
+      tempoGameOver = 2;
       stateMainMenu = 0;
     }
 
@@ -289,6 +317,13 @@
         //inimigo.rotacionar(ctx, 90);
         asteroides.push(asteroide);
       }
+    }
+
+    function criarAsteroide(){
+      var asteroide = new Asteroid();
+      asteroide.sprite.x = Math.floor(Math.random() * (tela.width - player.sprite.w));
+      asteroide.sprite.y = -30;
+      asteroides.push(asteroide);
     }
 
     function moveInimigos(numero){
@@ -315,6 +350,11 @@
     function getRandomArbitrary(min, max){
       return Math.floor(Math.random()*(max - min)) + min;                     //Seleciona um valor entre o min e o max
     }
+
+    addEventListener("click", function(e){
+      console.log(e.x);
+      //switch
+    });
 
     addEventListener("keydown", function(e){
       console.log(e.keyCode);

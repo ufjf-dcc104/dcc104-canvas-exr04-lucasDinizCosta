@@ -32,7 +32,7 @@ Sprite.prototype.perseguir = function (alvo){
 }
 
 Sprite.prototype.desenhar = function (ctx, nome) {
-  imageLibrary.drawClipSize(ctx, "spriteSheet", this.sx, this.sy, this.wImagem, this.hImagem, this.x, this.y, this.w, this.h);
+  imageLibrary.drawClipSize(ctx, nome, this.sx, this.sy, this.wImagem, this.hImagem, this.x, this.y, this.w, this.h);
 }
 
 Sprite.prototype.impoeLimites = function(x, y, w, h){
