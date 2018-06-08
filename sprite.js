@@ -7,6 +7,7 @@ function Sprite() {
   this.vy = 0;
   this.ax = 0;
   this.ay = 0;
+  this.ang = 180;
   this.colorBG = "grey";
   this.colorBorder = "yellow";
   this.borderSize = 1;
@@ -19,18 +20,19 @@ function Sprite() {
 }
 
 Sprite.prototype.mover = function (dt) {
-    this.vx = this.vx + this.ax*dt;
-    this.vy = this.vy + (G+this.ay)*dt;
+    //this.vx = this.vx + this.ax*dt;
+    //this.vy = this.vy + (G+this.ay)*dt;
     this.x = this.x + this.vx*dt;
     this.y = this.y + this.vy*dt;
 }
 
-Sprite.prototype.desenhar = function (ctx) {
-  imageLibrary.drawClipSize(ctx, "spriteSheet", this.sx, this.sy, this.wImagem, this.hImagem, this.x, this.y, this.w, this.h);
+Sprite.prototype.perseguir = function (alvo){
+  this.ax = 0.5*(alvo.x - this.x) - 0.9*this.vx;
+  this.ay = 0.5*(alvo.y - this.y) - 0.9*this.vy;
 }
 
-Sprite.prototype.desenharBarreira = function (ctx) {
-  imageLibrary.drawClip(ctx, "spriteSheet", this.sx, this.sy, this.w, this.h, this.x, this.y);    //chão
+Sprite.prototype.desenhar = function (ctx, nome) {
+  imageLibrary.drawClipSize(ctx, "spriteSheet", this.sx, this.sy, this.wImagem, this.hImagem, this.x, this.y, this.w, this.h);
 }
 
 Sprite.prototype.impoeLimites = function(x, y, w, h){
