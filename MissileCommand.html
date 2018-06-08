@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>Missile Command</title>
+    <script src="sprite.js"></script>
+    <script src="bird.js"></script>
+    <script src="ground.js"></script>
+    <script src="pipe.js"></script>
+    <script src="ImageLibrary.js" charset="utf-8"></script>
+    <script src="AudioLibrary.js" charset="utf-8"></script>
+  </head>
+  <body>
+    <h1>Missile Command</h1>
+    <canvas width="480" height="352"> //480,320
+      Seu browser não suporta canvas!</canvas>
+    <script>
+    var tela = document.getElementsByTagName("canvas")[0];
+    tela.style.border = '2px solid #000';                       //Colocando borda no canvas
+    /*
+    <canvas id="canvas" width="500" height="500" style="border: 1px solid black;">
+    Your browser does not support the HTML 5 Canvas.
+    </canvas>
+    */
+    var ctx = tela.getContext("2d");
+    var imageLibrary = new ImageLibrary();
+    imageLibrary.load("spriteSheet", "SpriteSheet.png");
+    imageLibrary.load("platformer_tiles", "Imagens/platformertiles.png");
+    imageLibrary.load("dark_background", "Imagens/dark_background.png");
+    imageLibrary.load("trees_background", "Imagens/trees.png");
+    imageLibrary.load("house01", "Imagens/House01.png");
+    imageLibrary.load("house02", "Imagens/House02.png");
+
+    imageLibrary.load("ground_1", "Imagens/tile1.png");
+
+    var audioLibrary = new AudioLibrary();
+    audioLibrary.load("die","Audios/sfx_die.wav");
+    audioLibrary.load("hit","Audios/sfx_hit.wav");
+    audioLibrary.load("point","Audios/sfx_point.wav");
+    audioLibrary.load("smooshing","Audios/sfx_swooshing.wav");
+    audioLibrary.load("wing","Audios/sfx_wing.wav");
+    var G = 500;          //G = 200;
+    var dt = anterior = 0;
+    var player = new Bird();
+    var estado = 1;
+    var melhorPontuacao = 0;
+    var velFase = 200;
+    var chao = new Ground(tela);
+    var barreira = [];
+    var maxY = 160;
+    var minY = 40;
+    var espEntreBarreiras = 250;
+    var distEntreCanos = 80;
+    var atingiuPontos = false;                  //A cada 15 pontos o esp Entre Barreiras diminui 10 até chegar a 60
+    var iniciarPartida = false;
+    var dificuldade = 0;                      //Toda vez que chegar a 15 o espaço entre objetos diminui
+    var apareceMedalha = false;
+
+    //Main Menu campos
+    var fontMainMenu = "30px Arial Black";
+    var wordsColor = "white";
+    var placarColor = "rgb(249,121,93)";
+    var alignMainMenu = "center";
+    var stateMainMenu = 0;
+
+    /**************************************************
+      *           Estados:
+      * 0 - Jogando;        //Durante a partida
+      * 1 - Menu;           //Main menu tem duas opções: "new game" e "quit";
+      * 2 - Game over;      //Exibe uma mensagem de game over na tela
+      * 3 - Fechado;        //Tela preta
+      ***************************************************/
+
+    function passo(t) {
+      dt = (t - anterior)/1000;
+      if(imageLibrary.loaded+audioLibrary.loaded<imageLibrary.size+audioLibrary.size) {//if(il.loaded+al.loaded<il.size+al.size) {
+        //ctx.fillStyle = "white";
+        //ctx.fillText("Carregando imagens e audio... "+(100*(il.loaded+al.loaded)/(il.size+al.loaded)).toFixed(2)+"%", 20, 100);
+        console.log("Carregando imagens e audio... "+(100*(imageLibrary.loaded+audioLibrary.loaded)/(imageLibrary.size+audioLibrary.size)).toFixed(2)+"%", 20, 100);
+        console.log("Não terminou de carregar...");
+        //return;
+      }
+      else{
+        switch (estado) {
+          case 0:
+            limparTela();
+            ctx.font = "20px Arial Black";
+            ctx.fillStyle = "white";
+            ctx.textAlign = alignMainMenu;
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "black";
+            imageLibrary.drawClipSize(ctx, "spriteSheet", 0, 0, 144, 223, 0, 0, tela.width, tela.height-56);      //Background
+            chao.mover(dt, velFase);
+            if(iniciarPartida == true){
+              for(var i = 0; i < barreira.length;i++){
+                if(barreira[i].sprite[0].x + barreira[i].sprite[0].w <= 0){
+                  barreira.splice(i, 1);
+                }
+                else{
+                  barreira[i].mover(dt);
+                }
+              }
+              if(barreira.length != 0){
+                if(tela.width - (barreira[barreira.length-1].sprite[0].x + barreira[barreira.length-1].sprite[0].w) >= espEntreBarreiras){
+                  criarBarreira();
+                }
+              }
+              else{
+                criarBarreira();
+              }
+              player.mover(dt);
+              player.impoeLimites(0, 0, tela.width, tela.height-56);        //Até o chão
+              for (var i = 0; i < barreira.length; i++) {
+                if(barreira[i].colidiuCom(player.sprite)){
+                  estado = 2;
+                  audioLibrary.play("hit");
+                  audioLibrary.play("die");
+                }
+                else{
+                  if((player.sprite.x >= barreira[i].sprite[0].x) && (player.sprite.x <= barreira[i].sprite[0].x + barreira[i].sprite[0].w) && (barreira[i].pontuou == false)){
+                     barreira[i].pontuou = true;
+                     player.pontos += 1;
+                     dificuldade += 1;
+                     audioLibrary.play("point");
+                     if((dificuldade == 15) && (espEntreBarreiras >= 90)){
+                       dificuldade = 0;
+                       espEntreBarreiras = espEntreBarreiras - 20;
+                       velFase = velFase + 8;
+                     }
+                  }
+                }
+              }
+              if(player.colidiuCom(chao.sprite[0])||player.colidiuCom(chao.sprite[1])){
+                audioLibrary.play("hit");
+                audioLibrary.play("die");
+                estado = 2;
+              }
+              for(var i = 0; i < barreira.length;i++){
+                barreira[i].desenhar(ctx);
+              }
+            }
+            else{               //Não começou a partida ainda
+              ctx.strokeText("Pressione \'ESPAÇO\'", player.sprite.x + 50, player.sprite.y + 50);
+              ctx.fillText("Pressione \'ESPAÇO\'", player.sprite.x + 50, player.sprite.y + 50);
+            }
+            chao.desenhar(ctx);
+            player.desenhar(ctx);
+
+            ctx.strokeText("Pontos: ", tela.width - 120,20);
+            ctx.fillText("Pontos: ", tela.width - 120,20);
+            ctx.strokeText(player.pontos, tela.width - 50, 20);
+            ctx.fillText(player.pontos, tela.width - 50, 20);
+            break;
+          case 1:         //Main menu
+            limparTela();
+            imageLibrary.drawSize(ctx, "dark_background", 0, 0, tela.width, tela.height); // Imagem do fundo
+            /*imageLibrary.drawClipSize(ctx, "platformer_tiles", 97, 33, 30, 32, 0, 0, tela.width, tela.height);    //Fundo Azul
+            for(var i = 0; i < 11; i++){
+              for(var j = 0; j < 16; j++){
+                imageLibrary.drawClipSize(ctx, "platformer_tiles", 160, 32, 32, 32, 0+32*j-10, 0+32*i, 32, 32);    //Estrelas
+              }
+            }
+            imageLibrary.drawClipSize(ctx, "platformer_tiles", 96, 0, 32, 32, 380, 40, 32, 32);    //lua
+            imageLibrary.drawClipSize(ctx, "trees_background", 0, 0, 916, 360, 0, 212, tela.width, 150);
+            for(var i = 0; i < 15;i++){
+              imageLibrary.drawClipSize(ctx, "ground_1", 0, 0, 120, 128, 0+32*i, 0+32*10, 32, 32);
+            }
+            imageLibrary.drawClipSize(ctx, "house01", 0, 0, 1259, 837, 40, 32*9, 32, 32);
+            imageLibrary.drawClipSize(ctx, "house02", 0, 0, 1259, 837, 160, 32*9, 32, 32);
+            imageLibrary.drawClipSize(ctx, "house01", 0, 0, 1259, 837, 280, 32*9, 32, 32);
+            imageLibrary.drawClipSize(ctx, "house01", 0, 0, 1259, 837, 318, 32*9, 32, 32);
+            imageLibrary.drawClipSize(ctx, "house02", 0, 0, 1259, 837, 370, 32*9, 32, 32);*/
+            //imageLibrary.drawClipSize(ctx, "ground_1", 0, 0, 120, 128, 0+32*0, 0+32*8+8, 32, 32);
+            //imageLibrary.drawClipSize(ctx, "ground_1", 0, 0, 120, 128, 0+32*14, 0+32*8+8, 32, 32);
+
+            //imageLibrary.drawClipSize(ctx, "ground_1", 0, 0, 120, 128, 0, 0+32*9, 32, 32);
+            //imageLibrary.drawClipSize(ctx, "spriteSheet", 0, 0, 144, 223, 0, 0, tela.width, tela.height-56);      //Background
+            //imageLibrary.drawClipSize(ctx, "spriteSheet", 292, 0, 168, 56, 0, tela.height-56, tela.width, 56);    //chão
+            ctx.fillStyle = wordsColor;
+            ctx.textAlign = alignMainMenu;
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "black";
+            ctx.font = "40px Arial Black";
+            ctx.strokeText("Missile Command", tela.width/2, tela.height/3);
+            ctx.fillText("Missile Command", tela.width/2, tela.height/3);
+            ctx.font = "15px Arial Black";
+            ctx.strokeText("Hi-Score: "+ melhorPontuacao,  tela.width/2, tela.height/2 + tela.height/3 + 30);
+            ctx.fillText("Hi-Score: "+ melhorPontuacao,  tela.width/2, tela.height/2 + tela.height/3 + 30);
+            ctx.font = fontMainMenu;
+            if(stateMainMenu == 0){
+              ctx.fillStyle = "blue";
+              ctx.strokeText("New Game", tela.width/2, tela.height/2 + tela.height/4-15);
+              ctx.fillText("New Game", tela.width/2, tela.height/2 + tela.height/4-15);
+              ctx.fillStyle = wordsColor;
+              ctx.strokeText("Quit", tela.width/2, tela.height/2 + tela.height/3);
+              ctx.fillText("Quit", tela.width/2, tela.height/2 + tela.height/3);
+            }
+            else{
+              ctx.fillStyle = wordsColor;
+              ctx.strokeText("New Game", tela.width/2, tela.height/2 + tela.height/4-15);
+              ctx.fillText("New Game", tela.width/2, tela.height/2 + tela.height/4-15);
+              ctx.fillStyle = "blue";
+              ctx.strokeText("Quit", tela.width/2, tela.height/2 + tela.height/3);
+              ctx.fillText("Quit", tela.width/2, tela.height/2 + tela.height/3);
+            }
+
+            break;
+          case 2:
+            //limparTela();
+            imageLibrary.drawClipSize(ctx, "spriteSheet", 148, 261, 181, 118, tela.width/2-80, 115, 181, 118);      //placar
+
+            //imageLibrary.drawClipSize(ctx, "spriteSheet", 152, 382, 38, 36, tela.width/2-56, 152, 38, 36);      //moeda
+            ctx.font = "40px Arial Black";
+            ctx.fillStyle = "white";
+            ctx.textAlign = alignMainMenu;
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "black";
+            ctx.fillText("GAME OVER", tela.width/2, 100);
+            ctx.strokeText("GAME OVER", tela.width/2, 100);
+            ctx.lineWidth = 1;
+            ctx.font = "16px Arial Black";
+            ctx.fillText(player.pontos, tela.width/2+65, 170);
+            ctx.strokeText(player.pontos, tela.width/2+65, 170);
+            ctx.fillText(melhorPontuacao, tela.width/2+65, 215);
+            ctx.strokeText(melhorPontuacao, tela.width/2+65, 215);
+            ctx.font = "20px Arial Black";
+            ctx.lineWidth = 2;
+            //ctx.fillStyle = placarColor; // ao menu inicial!
+            ctx.strokeText("Pressione \'ENTER\' para continuar", tela.width/2+25, 270);
+            ctx.fillText("Pressione \'ENTER\' para continuar", tela.width/2+25, 270);
+            if(player.pontos > melhorPontuacao){
+              imageLibrary.drawClipSize(ctx, "spriteSheet", 152, 382, 38, 36, tela.width/2-56, 152, 38, 36);      //medalha
+              if(apareceMedalha == false){
+                audioLibrary.play("point");
+                apareceMedalha = true;
+              }
+            }
+            //limparDados();
+            //ctx.fillText("GAME OVER", tela.width/2, 100);
+            //ctx.strokeText("GAME OVER", tela.width/2, 100);
+
+
+
+            //imageLibrary.drawClipSize(ctx, "spriteSheet", 148, 261, 38, 37, tela.width/2-80, 115, 181, 118);      //moeda
+
+
+            /*if(tempoGameOver >= 0){
+                tempoGameOver = tempoGameOver - 0.7*dt;
+            }
+            else{
+                if(player.pontos > melhorPontuacao){
+                  melhorPontuacao = player.pontos;
+                }
+                limparDados();
+                estado = 1;
+            }*/
+
+            break;
+          case 3:
+            limparTela();
+            //imageLibrary.drawClipSize(ctx, "spriteSheet", 0, 0, 144, 223, 0, 0, tela.width, tela.height-56);      //Background
+            //imageLibrary.drawClipSize(ctx, "spriteSheet", 292, 0, 168, 56, 0, tela.height-56, tela.width, 56);    //chão
+            break;
+          default:
+
+        }
+      }
+      anterior = t;
+      requestAnimationFrame(passo);
+    }
+
+    requestAnimationFrame(passo);
+
+    function limparTela() {
+      ctx.fillStyle = "black";
+      ctx.fillRect(0,0, tela.width, tela.height);
+    }
+
+    function limparDados(){
+      barreira.splice(0, barreira.length);
+      velFase = 200;
+      apareceMedalha = false;
+      iniciarPartida = false;
+      player = null;
+      dificuldade = 0;
+      stateMainMenu = 0;
+    }
+
+    function criarBarreira(){
+      var y = getRandomArbitrary(minY, maxY);
+      var canos = new Pipe();
+      canos.alteraYInicioEntreCanos(y);
+      canos.alteraDistCanos(distEntreCanos);
+      canos.alteraXCanos(tela.width+10);
+      barreira.push(canos);
+    }
+
+    function getRandomArbitrary(min, max){
+      return Math.floor(Math.random()*(max - min)) + min;                     //Seleciona um valor entre o min e o max
+    }
+
+    addEventListener("keydown", function(e){
+      console.log(e.keyCode);
+      if (estado == 0) {
+        switch (e.keyCode) {
+          case 32:
+            //player.ay = -3000;
+            if(iniciarPartida == false)
+              iniciarPartida = true;
+            audioLibrary.play("wing");
+            player.sprite.vy = -200;
+            break;
+          case 27:      //Pressionar o Esq
+            limparTela();
+            limparDados();
+            estado = 1;
+            break;
+          default:
+        }
+      }
+      else{
+        if(estado == 2){
+          switch (e.keyCode) {
+            case 13:    //Enter
+              if(player.pontos > melhorPontuacao)
+                melhorPontuacao = player.pontos;
+              limparDados();
+              estado = 1;
+              break;
+            default:
+          }
+        }
+        else{
+          switch (e.keyCode) {
+            case 13:    //Enter
+              if(estado != 2){
+                if(stateMainMenu == 0){
+                  player = new Bird();
+                  estado = 0;
+                }
+                else{
+                  estado = 3;
+                }
+              }
+              break;
+            case 32:         //Space bar
+              if(estado != 2){
+                if(stateMainMenu == 0){
+                  player = new Bird();
+                  estado = 0;
+                }
+                else{
+                  estado = 3;
+                }
+              }
+              break;
+            case 38:
+              if(stateMainMenu == 1){
+                stateMainMenu = 0;
+              }
+              break;
+            case 40:
+              if(stateMainMenu == 0){
+                stateMainMenu = 1;
+              }
+              break;
+            case 27:      //Pressionar o Esq
+              stateMainMenu = 0;
+              limparDados();
+              estado = 1;
+              break;
+            default:
+          }
+        }
+      }
+
+    });
+
+    addEventListener("keyup", function(e){
+      switch (e.keyCode) {
+        case 32:
+          if(estado == 0)
+            player.sprite.ay = 0;
+          break;
+        default:
+      }
+    });
+
+    </script>
+  </body>
+</html>
