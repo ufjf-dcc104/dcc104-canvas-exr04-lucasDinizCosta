@@ -84,7 +84,7 @@
     var velTiro = 100;
     player.tiro = 0;
     var tempoGameOver = 2;
-    var estado = 0;
+    var estado = 1;
     var melhorPontuacao = 0;
     var contCasasDestruidas = 0;
 
@@ -153,7 +153,7 @@
             }
 
             for (var i = 0; i < asteroides.length; i++) { //Move e coloca os inimigos na parte de cima da tela
-              if(asteroides[i].sprite.y > tela.height - 32){
+              if(asteroides[i].sprite.y + asteroides[i].sprite.h > tela.height - 32){
                 asteroides.splice(i,1);
               }
               else{
@@ -381,11 +381,8 @@
           //tiro.vy = -tiroVel;
           player.tiros.push(tiro);
           player.tiro = 0.30;
-          tiro.sprite.vx = velTiro*dt*(mouse.sprite.x - tiro.sprite.x);//0.015*dt);
-          tiro.sprite.vy =  velTiro*dt*(mouse.sprite.y - tiro.sprite.y);//0.015*dt);
-          //tiro.alvo = asteroides[i].sprite;
-          //tiro.alvoAtivo = true;
-          //tiro.perseguir(asteroides[i].sprite);
+          tiro.sprite.vx = velTiro*dt*(mouse.sprite.x - tiro.sprite.x);
+          tiro.sprite.vy =  velTiro*dt*(mouse.sprite.y - tiro.sprite.y);
         }
       }
     });
