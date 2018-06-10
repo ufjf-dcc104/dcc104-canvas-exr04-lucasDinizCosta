@@ -13,8 +13,8 @@ Asteroid.prototype.mover = function(dt){
 }
 
 Asteroid.prototype.desenhar = function(ctx){
-  ctx.fillStyle = "black";
-  ctx.fillRect(this.sprite.x, this.sprite.y, this.sprite.w, this.sprite.h);
+  /*ctx.fillStyle = "black";
+  ctx.fillRect(this.sprite.x, this.sprite.y, this.sprite.w, this.sprite.h);*/
   imageLibrary.drawClipAngle(ctx, "asteroide", this.sprite.sx, this.sprite.sy, this.sprite.w, this.sprite.h, this.sprite.x+this.sprite.w/2, this.sprite.y+this.sprite.h/2, this.sprite.ang);
 }
 
