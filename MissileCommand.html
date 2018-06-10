@@ -9,7 +9,7 @@
     <script src="house.js"></script>
     <script src="ImageLibrary.js" charset="utf-8"></script>
     <script src="AudioLibrary.js" charset="utf-8"></script>
-    <script src="Mouse.js" charset="utf-8"></script>
+    <script src="mouse.js" charset="utf-8"></script>
   </head>
   <body>
     <h1>Missile Command</h1>
@@ -206,11 +206,19 @@
             }
 
             if(mouse.cx > 0 && mouse.cx < tela.width && mouse.cy > 0 && mouse.cy < tela.height){
-              console.log("Ta no canvas");
+              //console.log("Ta no canvas");
+              ctx.save();
+              ctx.strokeStyle = "darkred";
               ctx.beginPath();
-              //ctx.arc(mouse.sx-10,mouse.sy-163,20,0,2*Math.PI);
-              ctx.arc(mouse.cx,mouse.cy,20,0,2*Math.PI);
+              ctx.lineWidth = 3;
+              ctx.arc(mouse.cx-tela.offsetLeft, mouse.cy-tela.offsetTop, 20, 0, 2*Math.PI);           //Deve-se substrair tela.offsetLeft e tela.offsetTop pra que fique ajustado no canvas
               ctx.stroke();
+              ctx.moveTo(mouse.cx-tela.offsetLeft, mouse.cy-tela.offsetTop-20);
+              ctx.lineTo(mouse.cx-tela.offsetLeft, mouse.cy-tela.offsetTop+20);
+              ctx.moveTo(mouse.cx-tela.offsetLeft-20, mouse.cy-tela.offsetTop);
+              ctx.lineTo(mouse.cx-tela.offsetLeft+20, mouse.cy-tela.offsetTop);
+              ctx.stroke();
+              ctx.restore();
 
             }
 
