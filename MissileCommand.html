@@ -72,10 +72,10 @@
     casas.push(house5);
 
     //for(var i = 0; i > 3; i){
-    /*var asteroide = new Asteroid();
+    var asteroide = new Asteroid();
     asteroide.sprite.x = 150;
     asteroide.sprite.y = 80;
-    asteroides.push(asteroide);*/
+    asteroides.push(asteroide);
     //}
 
     var player = new Cannon();
@@ -145,8 +145,8 @@
             else{
               tempoEspera = 1;
               inimigosDescerem = Math.floor(Math.random() * 4);
-              criarInimigos(inimigosDescerem);
-              moveInimigos(inimigosDescerem);
+              //criarInimigos(inimigosDescerem);
+              //moveInimigos(inimigosDescerem);
             }
 
             for (var i = 0; i < asteroides.length; i++) { //Move e coloca os inimigos na parte de cima da tela
@@ -206,7 +206,6 @@
             }
 
             if(mouse.cx > 0 && mouse.cx < tela.width && mouse.cy > 0 && mouse.cy < tela.height){
-              //console.log("Ta no canvas");
               ctx.save();
               ctx.strokeStyle = "darkred";
               ctx.beginPath();
@@ -219,7 +218,11 @@
               ctx.lineTo(mouse.cx-tela.offsetLeft+20, mouse.cy-tela.offsetTop);
               ctx.stroke();
               ctx.restore();
-
+              mouse.sprite.x = mouse.cx-tela.offsetLeft-10;
+              mouse.sprite.y = mouse.cy-tela.offsetTop-10;
+              ctx.fillStyle = "black";
+              ctx.fillRect(mouse.sprite.x, mouse.sprite.y, mouse.sprite.w, mouse.sprite.h);
+              ctx.fillStyle = "white";
             }
 
             if(tempoAumentarVelocidade <= 0){
@@ -360,7 +363,15 @@
     }
 
     addEventListener("click", function(e){
-      console.log(e.x);
+      var colidiu = false;
+
+      var cont = 0;
+      for(var i = 0; i < asteroides.length; i++){
+        if(mouse.sprite.colidiuCom(asteroides[i].sprite)){
+          console.log("foi");
+          break;
+        }
+      }
       //switch
     });
 
