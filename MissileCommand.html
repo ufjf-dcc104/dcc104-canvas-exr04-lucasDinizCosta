@@ -81,7 +81,7 @@
     //}
 
     var player = new Cannon();
-    var velTiro = 100;
+    var velTiro = 300;
     player.tiro = 0;
     var tempoGameOver = 2;
     var estado = 1;
@@ -381,8 +381,12 @@
           //tiro.vy = -tiroVel;
           player.tiros.push(tiro);
           player.tiro = 0.30;
-          tiro.sprite.vx = velTiro*dt*(mouse.sprite.x - tiro.sprite.x);
-          tiro.sprite.vy =  velTiro*dt*(mouse.sprite.y - tiro.sprite.y);
+		  var alturaTiro = mouse.sprite.y - tiro.sprite.y;
+		  var distEmX = mouse.sprite.x - tiro.sprite.x;
+		  var distTiro = Math.pow((distEmX*distEmX + alturaTiro*alturaTiro), 0.5);
+		  
+          tiro.sprite.vx = velTiro*(distEmX/distTiro);
+          tiro.sprite.vy = velTiro*(alturaTiro/distTiro);
         }
       }
     });
